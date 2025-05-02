@@ -1,71 +1,42 @@
 import "reflect-metadata";
-import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { ApolloServer } from "@apollo/server";
-import { startStandaloneServer } from "@apollo/server/standalone";
+import { typeDefs } from "./schema/typeDefs.js";
+import { resolvers } from "./resolvers/index.js";
+import express from "express";
+import http from "http";
+import cors from "cors";
+import bodyParser from "body-parser";
+import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
+import { expressMiddleware } from "@apollo/server/express4";
+import graphqlUploadExpress from "graphql-upload/graphqlUploadExpress.mjs";
 
 dotenv.config();
 
 const startServer = async () => {
-  const typeDefs = `#graphql
-  # Comments in GraphQL strings (such as this one) start with the hash (#) symbol.
+  const PORT = process.env.PORT;
 
-  # This "Book" type defines the queryable fields for every book in our data source.
-  type Book {
-    title: String
-    author: String
-  }
+  const app = express();
+  app.use(graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 10 }));
+  await mongoose.connect(process.env.MONGODB_URI);
 
-  # The "Query" type is special: it lists all of the available queries that
-  # clients can execute, along with the return type for each. In this
-  # case, the "books" query returns an array of zero or more Books (defined above).
-  type Query {
-    books: [Book]
-  }
-`;
-
-  const books = [
-    {
-      title: "The Awakening",
-      author: "Kate Chopin",
-    },
-    {
-      title: "City of Glass",
-      author: "Paul Auster",
-    },
-  ];
-
-  const resolvers = {
-    Query: {
-      books: () => books,
-    },
-  };
-
-  const MONGODB_URI = process.env.MONGODB_URI;
-
-  try {
-    await mongoose.connect(MONGODB_URI as string);
-    console.log("Connected to MongoDB");
-  } catch (error) {
-    console.error("MongoDB connection error:", error);
-    process.exit(1);
-  }
-
+  const httpServer = http.createServer(app);
   const server = new ApolloServer({
     typeDefs,
     resolvers,
+    plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
   });
+  await server.start();
 
-  const PORT = process.env.PORT;
+  app.use(cors(), bodyParser.json(), expressMiddleware(server));
 
-  const { url } = await startStandaloneServer(server, {
-    listen: { port: +PORT },
-  });
-
-  console.log(`🚀  Server ready at: ${url}`);
+  await new Promise<void>((resolve) =>
+    httpServer.listen({ port: PORT }, () => resolve())
+  );
+  console.log(`Server ready at http://localhost:5000`);
 };
 
 startServer().catch((error) => {
-  console.error("❌ Error starting server:", error);
+  console.error("Error starting server:", error);
 });
