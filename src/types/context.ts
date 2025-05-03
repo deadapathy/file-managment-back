@@ -1,6 +1,6 @@
 export interface Context {
-  user?: {
-    id: string;
-    username: string;
-  };
+	user?: {
+		id: string
+		username: string
+	}
 }
