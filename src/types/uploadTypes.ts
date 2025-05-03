@@ -5,11 +5,6 @@ export interface UploadFile {
 	createReadStream: () => NodeJS.ReadableStream
 }
 
-export interface S3UploadResponse {
-	Location: string
-	[key: string]: any
-}
-
 export type MultiUploadType = {
 	input: { files: UploadFile[] }
 	folderId: string

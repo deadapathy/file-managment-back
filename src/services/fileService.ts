@@ -51,9 +51,10 @@ export const fileService = {
 				return `Uploaded Location: ${res.Location}`
 			})
 
-			return await Promise.all(uploadPromises)
+			const response = await Promise.all(uploadPromises)
+			return JSON.stringify(response)
 		} catch (error) {
-			throw new Error('Failed to upload files')
+			throw new Error(error)
 		}
 	},
 
