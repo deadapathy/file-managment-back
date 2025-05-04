@@ -2,7 +2,9 @@ import GraphQLUpload from 'graphql-upload/GraphQLUpload.mjs'
 import {
 	DeleteFileType,
 	DeleteFolderType,
+	MoveFileType,
 	MultiUploadType,
+	RenameFilesType,
 } from '../types/uploadTypes.js'
 import { UserType } from '../types/userTypes.js'
 import { fileService } from '../services/fileService.js'
@@ -16,8 +18,17 @@ export const resolvers = {
 		async files(_: unknown, args: { folderId?: string }) {
 			return await fileService.getAllFiles(args.folderId)
 		},
+
 		async folders() {
 			return await folderService.getAllFolders()
+		},
+
+		async getDownloadUrl(_: unknown, { key }: { key: string }) {
+			return await fileService.downloadFiles(key)
+		},
+
+		async searchFiles(_: unknown, { query }: { query: string }) {
+			return await fileService.searchFiles(query)
 		},
 	},
 
@@ -53,6 +64,20 @@ export const resolvers = {
 			{ folderUrl, folderId }: DeleteFolderType
 		) => {
 			return await folderService.deleteFolder(folderUrl, folderId)
+		},
+
+		renameFile: async (
+			_: unknown,
+			{ oldKey, newKey, fileId, newName, type }: RenameFilesType
+		) => {
+			return await fileService.renameFile(oldKey, newKey, fileId, newName, type)
+		},
+
+		fileMove: async (
+			_: unknown,
+			{ oldKey, newKey, fileId, newFolderId }: MoveFileType
+		) => {
+			return await fileService.fileMove(oldKey, newKey, fileId, newFolderId)
 		},
 	},
 }

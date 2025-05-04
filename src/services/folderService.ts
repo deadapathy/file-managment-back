@@ -26,6 +26,7 @@ export const folderService = {
 				size: 0,
 				url: res.Location,
 				uploadedAt: new Date(),
+				type: 'folder',
 			})
 
 			return {

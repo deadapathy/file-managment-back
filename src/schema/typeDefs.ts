@@ -20,7 +20,7 @@ export const typeDefs = `#graphql
     _id: ID!
     name: String!
     size: String!
-    type: String!
+    type: String
     url: String!
     uploadedAt: String
     folderId: ID
@@ -42,6 +42,8 @@ export const typeDefs = `#graphql
   type Query {
     files(folderId: ID): [Files!]!
     folders: [Folders!]!
+    getDownloadUrl(key: String!): String!
+    searchFiles(query: String): [Files!]!
   }
 
   type Mutation {
@@ -52,5 +54,7 @@ export const typeDefs = `#graphql
     deleteFile(fileUrl: String!, fileId: ID!): String!
     deleteFolder(folderUrl: String!, folderId: ID!): String!
     deleteManyItems(fileIds: [ID!]!, folderIdsWithUrls: [FolderInput!]!): String!
+    renameFile(oldKey: String!, newKey: String!, fileId: ID!, newName: String!, type: String!): String!
+    fileMove(oldKey: String!, newKey: String!, fileId: ID!, newFolderId: ID): String!
   }
 `

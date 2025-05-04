@@ -12,3 +12,18 @@ export type MultiUploadType = {
 
 export type DeleteFileType = { fileUrl: string; fileId: string }
 export type DeleteFolderType = { folderUrl: string; folderId: string }
+
+export type RenameFilesType = {
+	oldKey: string
+	newKey: string
+	fileId: string
+	newName: string
+	type: string
+}
+
+export type MoveFileType = {
+	oldKey: string
+	newKey: string
+	fileId: string
+	newFolderId: string
+}

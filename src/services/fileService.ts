@@ -58,6 +58,20 @@ export const fileService = {
 		}
 	},
 
+	async downloadFiles(key: string) {
+		const params = {
+			Bucket: process.env.AWS_S3_BUCKET_NAME,
+			Key: key,
+			Expires: 60,
+		}
+
+		try {
+			const url = await s3.getSignedUrlPromise('getObject', params)
+			return url
+		} catch (error) {
+			throw new Error(error)
+		}
+	},
 	async deleteFile(fileUrl: string, fileId: string) {
 		try {
 			await s3
@@ -70,6 +84,95 @@ export const fileService = {
 			await Files.findByIdAndDelete(fileId)
 
 			return 'File deleted'
+		} catch (error) {
+			throw new Error(error)
+		}
+	},
+	async renameFile(
+		oldKey: string,
+		newKey: string,
+		fileId: string,
+		newName: string,
+		type: string
+	) {
+		const Bucket = process.env.AWS_S3_BUCKET_NAME
+		const Region = process.env.AWS_REGION
+
+		try {
+			await s3
+				.copyObject({
+					Bucket,
+					CopySource: `${Bucket}/${oldKey}`,
+					Key: newKey,
+				})
+				.promise()
+
+			await s3.deleteObject({ Bucket, Key: oldKey }).promise()
+
+			if (type === 'folder') {
+				await Folders.findByIdAndUpdate(fileId, {
+					name: newName,
+					url: `https://${Bucket}.s3.${Region}.amazonaws.com/${newKey}`,
+				})
+			} else {
+				await Files.findByIdAndUpdate(fileId, {
+					name: newName,
+					url: `https://${Bucket}.s3.${Region}.amazonaws.com/${newKey}`,
+				})
+			}
+
+			return 'File updated'
+		} catch (error) {
+			throw new Error(error)
+		}
+	},
+	async searchFiles(query: string) {
+		if (!query) {
+			const folders = await Folders.find().sort({ uploadedAt: -1 })
+			const files = await Files.find().sort({ uploadedAt: -1 })
+
+			return [...files, ...folders]
+		}
+
+		const regex = new RegExp(query, 'i')
+
+		const files = await Files.find({
+			name: { $regex: regex },
+		})
+
+		const folders = await Folders.find({
+			name: { $regex: regex },
+		})
+
+		return [...files, ...folders]
+	},
+
+	async fileMove(
+		oldKey: string,
+		newKey: string,
+		fileId: string,
+		newFolderId: string
+	) {
+		const Bucket = process.env.AWS_S3_BUCKET_NAME
+		const Region = process.env.AWS_REGION
+
+		try {
+			await s3
+				.copyObject({
+					Bucket,
+					CopySource: `${Bucket}/${oldKey}`,
+					Key: newKey,
+				})
+				.promise()
+
+			await s3.deleteObject({ Bucket, Key: oldKey }).promise()
+
+			await Files.findByIdAndUpdate(fileId, {
+				folderId: newFolderId,
+				url: `https://${Bucket}.s3.${Region}.amazonaws.com/${newKey}`,
+			})
+
+			return 'File moved'
 		} catch (error) {
 			throw new Error(error)
 		}
